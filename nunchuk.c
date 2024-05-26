@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
+/* ########################################################### */
+/* #                    Imports                              # */
+/* ########################################################### */
 #include <linux/i2c.h>
 #include <linux/init.h>
 #include <linux/module.h>
@@ -15,7 +18,7 @@ static void nunchuck_remove(struct i2c_client *client);
 /* ########################################################### */
 
 static const struct of_device_id nunchuck_of_match[] = {
-    {.compatible = "nintendo,nunchuck"},
+    {.compatible = "nintendo,nunchuk"},
     {},
 };
 MODULE_DEVICE_TABLE(of, nunchuck_of_match);
@@ -34,7 +37,7 @@ module_i2c_driver(nunchuck_i2c_driver);
 MODULE_LICENSE("GPL");
 
 /* ########################################################### */
-/* #                    Private API                           # */
+/* #                    Private API                          # */
 /* ########################################################### */
 int nunchuck_probe(struct i2c_client *client, const struct i2c_device_id *id) {
   pr_info("%s\n", __func__);
