@@ -14,6 +14,7 @@ static int nunchuk_probe(struct i2c_client *client,
                          const struct i2c_device_id *id);
 static void nunchuk_remove(struct i2c_client *client);
 static int nunchuk_init(struct i2c_client *client);
+static int nunchuk_read_register(struct i2c_client *client);
 
 /* ########################################################### */
 /* #                    Public API                           # */
@@ -48,6 +49,17 @@ int nunchuk_probe(struct i2c_client *client, const struct i2c_device_id *id) {
 
   err = nunchuk_init(client);
 
+  if (err) {
+    return err;
+  }
+
+  for (int i = 0; i < 2; i++) {
+    err = nunchuk_read_register(client);
+    if (err) {
+      return err;
+    }
+  }
+
   return err;
 };
 
@@ -79,3 +91,39 @@ int nunchuk_init(struct i2c_client *client) {
 
   return 0;
 };
+
+int nunchuk_read_register(struct i2c_client *client) {
+  char buf[6] = {0x00}; // We just reusing one buffer for all operations
+  int bytes_amount;
+
+  /* Sleep somwhere between 10ms and 20ms. */
+  /* usleep_range is better for performance system than usleep. */
+  /* TO-DO why is that? */
+  usleep_range(10000, 20000);
+
+  // Set nunchuk in registers reading mode
+  bytes_amount = i2c_master_send(client, buf, 1);
+
+  if (bytes_amount != 1) {
+    pr_err("Unable to set nunchuk in registers reading mode\n");
+    return -1;
+  }
+
+  // Read values
+  bytes_amount = i2c_master_recv(client, buf, sizeof(buf) / sizeof(char));
+  if (bytes_amount != sizeof(buf) / sizeof(char)) {
+    pr_err("Unable to read nunchuk's registers\n");
+    return -2;
+  }
+
+  /* For 6 byte of read value: */
+  /* • bit 0 == 0 means that Z is pressed. */
+  /* • bit 0 == 1 means that Z is released. */
+  /* • bit 1 == 0 means that C is pressed. */
+  /* • bit 1 == 1 means that C is released. */
+  pr_info("Z button (%s), C button (%s)\n",
+          (buf[5] & BIT(0)) == 0 ? "Pressed" : "Released",
+          (buf[5] & BIT(1)) == 0 ? "Pressed" : "Released");
+
+  return 0;
+}
