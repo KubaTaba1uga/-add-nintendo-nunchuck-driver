@@ -19,7 +19,6 @@ static int nunchuk_read_register(struct i2c_client *client);
 /* ########################################################### */
 /* #                    Public API                           # */
 /* ########################################################### */
-
 static const struct of_device_id nunchuk_of_match[] = {
     {.compatible = "nintendo,nunchuk"},
     {},
@@ -127,3 +126,5 @@ int nunchuk_read_register(struct i2c_client *client) {
 
   return 0;
 }
+
+int nunchuk_read()
