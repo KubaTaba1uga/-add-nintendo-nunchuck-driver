@@ -2,6 +2,7 @@
 /* ########################################################### */
 /* #                    Imports                              # */
 /* ########################################################### */
+#include <linux/delay.h>
 #include <linux/i2c.h>
 #include <linux/init.h>
 #include <linux/module.h>
@@ -53,21 +54,27 @@ int nunchuk_probe(struct i2c_client *client, const struct i2c_device_id *id) {
 void nunchuk_remove(struct i2c_client *client) { pr_info("%s\n", __func__); };
 
 int nunchuk_init(struct i2c_client *client) {
-  char initialization_data[] = {0xf0, 0x55};
-  char initialization_reg_addr = 0x52;
+  char initialization_data[] = {0x55, 0x00};
+  char initialization_regs[] = {0xf0, 0xfb};
   char buf[2];
-  int err;
+  int bytes_written;
 
   pr_info("%s\n", __func__);
 
   for (int i = 0; i < sizeof(initialization_data) / sizeof(char); i++) {
-    buf[0] = initialization_reg_addr, buf[1] = initialization_data[i];
-    err = i2c_master_send(client, buf, sizeof(buf) / sizeof(char));
 
-    if (err < 0) {
+    buf[0] = initialization_regs[i], buf[1] = initialization_data[i];
+
+    bytes_written = i2c_master_send(client, buf, sizeof(buf) / sizeof(char));
+
+    if (bytes_written < sizeof(buf) / sizeof(char)) {
       pr_err("Unable to send initialization data to nunchuk driver\n");
-      return err;
+      return -1;
     }
+
+    /* Wait for 1ms between initialization sequences. */
+    /* This is nunchuk specification requirement. */
+    udelay(1000);
   }
 
   return 0;
