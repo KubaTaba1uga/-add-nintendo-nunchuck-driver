@@ -5,6 +5,7 @@
 #include <linux/delay.h>
 #include <linux/i2c.h>
 #include <linux/init.h>
+#include <linux/input.h>
 #include <linux/module.h>
 
 /* ########################################################### */
@@ -19,6 +20,8 @@ static int nunchuk_read_register(struct i2c_client *client);
 /* ########################################################### */
 /* #                    Public API                           # */
 /* ########################################################### */
+MODULE_LICENSE("GPL");
+
 static const struct of_device_id nunchuk_of_match[] = {
     {.compatible = "nintendo,nunchuk"},
     {},
@@ -36,30 +39,30 @@ static struct i2c_driver nunchuk_i2c_driver = {
 };
 module_i2c_driver(nunchuk_i2c_driver);
 
-MODULE_LICENSE("GPL");
-
 /* ########################################################### */
 /* #                    Private API                          # */
 /* ########################################################### */
 int nunchuk_probe(struct i2c_client *client, const struct i2c_device_id *id) {
-  pr_info("%s\n", __func__);
-
+  struct input_dev *input_dev_instance;
   int err;
 
-  err = nunchuk_init(client);
+  pr_info("%s\n", __func__);
 
+  input_dev_instance = devm_input_allocate_device(&client->dev);
+  if (!input_dev_instance)
+    return -ENOMEM;
+
+  err = nunchuk_init(client);
   if (err) {
     return err;
   }
 
-  for (int i = 0; i < 2; i++) {
-    err = nunchuk_read_register(client);
-    if (err) {
-      return err;
-    }
+  err = input_register_device(input_dev_instance);
+  if (err) {
+    return err;
   }
 
-  return err;
+  return 0;
 };
 
 void nunchuk_remove(struct i2c_client *client) { pr_info("%s\n", __func__); };
@@ -126,5 +129,3 @@ int nunchuk_read_register(struct i2c_client *client) {
 
   return 0;
 }
-
-int nunchuk_read()
